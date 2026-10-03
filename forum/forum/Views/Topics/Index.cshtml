@@ -1,0 +1,44 @@
+﻿@model IEnumerable<forum.Models.Topic>
+
+@{
+    ViewData["Title"] = "Главная - Темы";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Темы форума</h2>
+        @if (User.Identity!.IsAuthenticated)
+        {
+            <a asp-action="Create" class="btn btn-primary">Создать тему</a>
+        }
+    </div>
+
+    <div class="list-group shadow-sm">
+        @foreach (var topic in Model)
+        {
+            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h5 class="mb-1 text-primary">@topic.Title</h5>
+                    <small class="text-muted">
+                        @topic.CreatedAt.ToString("dd.MM.yyyy HH:mm") | Автор: <strong>@topic.User?.UserName</strong>
+                    </small>
+                </div>
+                <span class="badge bg-secondary rounded-pill">ответов: @topic.Replies.Count</span>
+            </a>
+        }
+    </div>
+    
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
