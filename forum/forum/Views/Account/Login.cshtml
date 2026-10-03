@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Вход";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Вход в систему</h2>
+
+                <form asp-action="Login" method="post">
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Email или логин</label>
+                        <input name="emailOrUserName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Пароль</label>
+                        <input name="password" type="password" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input name="rememberMe" type="checkbox" value="true" class="form-check-input" id="rememberMe" />
+                        <label class="form-check-label" for="rememberMe">Запомнить меня</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Войти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

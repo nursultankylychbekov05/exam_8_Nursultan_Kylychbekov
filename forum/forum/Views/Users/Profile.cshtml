@@ -1,0 +1,29 @@
+﻿@model forum.Models.User
+
+@{
+    ViewData["Title"] = "Личный кабинет";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm col-md-8 mx-auto">
+        <div class="card-body text-center">
+            <img src="@Model.Avatar" class="rounded-circle mb-3 shadow" style="width: 120px; height: 120px; object-fit: cover;" />
+            <h3>@Model.UserName</h3>
+            <p class="text-muted">@Model.Email</p>
+            <p><strong>Дата рождения:</strong> @Model.BirthDate.ToString("dd.MM.yyyy")</p>
+            
+            <hr />
+            
+            <div class="row text-center">
+                <div class="col-6">
+                    <h5>Созданных тем</h5>
+                    <span class="badge bg-primary fs-5">@ViewBag.TopicsCount</span>
+                </div>
+                <div class="col-6">
+                    <h5>Ответов на форуме</h5>
+                    <span class="badge bg-secondary fs-5">@ViewBag.RepliesCount</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
