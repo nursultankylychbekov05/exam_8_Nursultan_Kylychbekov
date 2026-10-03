@@ -1,0 +1,118 @@
+﻿@model forum.Models.Topic
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2>@Model.Title</h2>
+            <p class="text-muted">
+                Создано: @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm") | Автор: <strong>@Model.User?.UserName</strong>
+            </p>
+            <hr />
+            <p class="fs-5">@Model.Content</p>
+        </div>
+    </div>
+    
+    <h4 class="mb-3">Ответы</h4>
+    <div id="replies-container">
+        @if (ViewBag.Replies != null)
+        {
+            @foreach (var reply in ViewBag.Replies)
+            {
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body d-flex">
+                        <img src="@reply.User?.Avatar" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;" />
+                        <div class="w-100">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="fw-bold mb-1">@reply.User?.UserName</h6>
+                                <small class="text-muted">@reply.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                            </div>
+                            <p class="mb-0">@reply.Content</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+    
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Details" asp-route-id="@Model.Id" asp-route-page="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+    
+    @if (User.Identity!.IsAuthenticated)
+    {
+        <div class="card shadow-sm mt-4 mb-5">
+            <div class="card-body">
+                <h5>Оставить ответ</h5>
+                <form id="reply-form">
+                    <input type="hidden" id="topicId" value="@Model.Id" />
+                    <div class="mb-3">
+                        <textarea id="replyContent" class="form-control" rows="3" placeholder="Введите ваш ответ..." required maxlength="300"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </form>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4">
+            Чтобы оставлять ответы, пожалуйста, <a asp-controller="Account" asp-action="Login">войдите</a> в систему.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $('#reply-form').on('submit', function (e) {
+            e.preventDefault();
+            const topicId = $('#topicId').val();
+            const content = $('#replyContent').val();
+
+            $.ajax({
+                url: '@Url.Action("AddReply", "Topics")',
+                type: 'POST',
+                data: { topicId: topicId, content: content },
+                success: function (res) {
+                    if (res.success) {
+                        const newReplyHtml = `
+                            <div class="card mb-3 shadow-sm">
+                                <div class="card-body d-flex">
+                                    <img src="${res.userAvatar}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;" />
+                                    <div class="w-100">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="fw-bold mb-1">${res.userName}</h6>
+                                            <small class="text-muted">${res.createdAt}</small>
+                                        </div>
+                                        <p class="mb-0">${res.content}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        $('#replies-container').append(newReplyHtml);
+                        $('#replyContent').val('');
+                        
+                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    }
+                },
+                error: function (err) {
+                    alert('Ошибка при отправке ответа.');
+                }
+            });
+        });
+    </script>
+}

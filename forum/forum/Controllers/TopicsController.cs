@@ -73,5 +73,67 @@ namespace forum.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        
+        [HttpGet]
+        public async Task<IActionResult> Details(int id, int page = 1)
+        {
+            int pageSize = 5; 
+
+            var topic = await _context.Topics
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (topic == null) return NotFound();
+
+            var totalReplies = await _context.Replies.Where(r => r.TopicId == id).CountAsync();
+
+            var replies = await _context.Replies
+                .Where(r => r.TopicId == id)
+                .Include(r => r.User)
+                .OrderBy(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Replies = replies;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalReplies / (double)pageSize);
+            ViewBag.TopicId = id;
+
+            return View(topic);
+        }
+        
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> AddReply(int topicId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return BadRequest("Сообщение не может быть пустым.");
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var reply = new Reply
+            {
+                TopicId = topicId,
+                Content = content,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+                UserId = user.Id
+            };
+
+            _context.Replies.Add(reply);
+            await _context.SaveChangesAsync();
+            
+            return Json(new
+            {
+                success = true,
+                userName = user.UserName,
+                userAvatar = user.Avatar,
+                createdAt = reply.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
+                content = reply.Content
+            });
+        }
     }
 }
