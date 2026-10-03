@@ -94,8 +94,19 @@ namespace forum.Controllers
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+            
+            var userReplyCounts = new Dictionary<string, int>();
+            foreach (var reply in replies)
+            {
+                if (reply.UserId != null && !userReplyCounts.ContainsKey(reply.UserId))
+                {
+                    int count = await _context.Replies.CountAsync(r => r.UserId == reply.UserId);
+                    userReplyCounts[reply.UserId] = count;
+                }
+            }
 
             ViewBag.Replies = replies;
+            ViewBag.UserReplyCounts = userReplyCounts;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalReplies / (double)pageSize);
             ViewBag.TopicId = id;
