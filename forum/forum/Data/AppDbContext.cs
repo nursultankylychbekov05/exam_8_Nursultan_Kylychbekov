@@ -10,5 +10,7 @@ namespace forum.Data
 
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Reply> Replies { get; set; }
+        
+        public DbSet<ReplyVote> ReplyVotes { get; set; } = null!;
     }
 }

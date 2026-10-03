@@ -90,6 +90,7 @@ namespace forum.Controllers
             var replies = await _context.Replies
                 .Where(r => r.TopicId == id)
                 .Include(r => r.User)
+                .Include(r => r.Votes)
                 .OrderBy(r => r.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -140,10 +141,57 @@ namespace forum.Controllers
             return Json(new
             {
                 success = true,
+                replyId = reply.Id,
                 userName = user.UserName,
                 userAvatar = user.Avatar,
                 createdAt = reply.CreatedAt.ToString("dd.MM.yyyy HH:mm"),
                 content = reply.Content
+            });
+        }
+        
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> VoteReply(int replyId, bool isLike)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var existingVote = await _context.ReplyVotes
+                .FirstOrDefaultAsync(v => v.ReplyId == replyId && v.UserId == user.Id);
+
+            if (existingVote != null)
+            {
+                if (existingVote.IsLike == isLike)
+                {
+                    _context.ReplyVotes.Remove(existingVote);
+                }
+                else
+                {
+                    existingVote.IsLike = isLike;
+                    _context.ReplyVotes.Update(existingVote);
+                }
+            }
+            else
+            {
+                var vote = new ReplyVote
+                {
+                    ReplyId = replyId,
+                    UserId = user.Id,
+                    IsLike = isLike
+                };
+                _context.ReplyVotes.Add(vote);
+            }
+
+            await _context.SaveChangesAsync();
+            
+            var likesCount = await _context.ReplyVotes.CountAsync(v => v.ReplyId == replyId && v.IsLike);
+            var dislikesCount = await _context.ReplyVotes.CountAsync(v => v.ReplyId == replyId && !v.IsLike);
+
+            return Json(new
+            {
+                success = true,
+                likes = likesCount,
+                dislikes = dislikesCount
             });
         }
     }

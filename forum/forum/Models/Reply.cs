@@ -17,5 +17,7 @@ namespace forum.Models
         
         public string UserId { get; set; } = string.Empty;
         public User? User { get; set; }
+        
+        public ICollection<ReplyVote> Votes { get; set; } = new List<ReplyVote>();
     }
 }

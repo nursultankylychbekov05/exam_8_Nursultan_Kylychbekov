@@ -6,6 +6,7 @@
 }
 
 <div class="container mt-4">
+    
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <h2>@Model.Title</h2>
@@ -17,14 +18,18 @@
         </div>
     </div>
     
+    
     <h4 class="mb-3">Ответы</h4>
     <div id="replies-container">
         @if (ViewBag.Replies != null)
         {
-            @foreach (var reply in ViewBag.Replies)
+            @foreach (var reply in (IEnumerable<forum.Models.Reply>)ViewBag.Replies)
             {
                 int userMsgCount = userReplyCounts.ContainsKey(reply.UserId) ? userReplyCounts[reply.UserId] : 0;
-                <div class="card mb-3 shadow-sm">
+                int likes = reply.Votes != null ? reply.Votes.Where(v => v.IsLike).Count() : 0;
+                int dislikes = reply.Votes != null ? reply.Votes.Where(v => !v.IsLike).Count() : 0;
+
+                <div class="card mb-3 shadow-sm" id="reply-@reply.Id">
                     <div class="card-body d-flex">
                         <div class="text-center me-3" style="min-width: 80px;">
                             <img src="@reply.User?.Avatar" class="rounded-circle mb-1" style="width: 50px; height: 50px; object-fit: cover;" />
@@ -35,13 +40,33 @@
                                 <h6 class="fw-bold mb-1">@reply.User?.UserName</h6>
                                 <small class="text-muted">@reply.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
                             </div>
-                            <p class="mb-0">@reply.Content</p>
+                            <p class="mb-2">@reply.Content</p>
+
+                           
+                            @if (User.Identity!.IsAuthenticated)
+                            {
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-success vote-btn" data-reply-id="@reply.Id" data-is-like="true">
+                                        👍 <span class="likes-count">@likes</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger vote-btn" data-reply-id="@reply.Id" data-is-like="false">
+                                        👎 <span class="dislikes-count">@dislikes</span>
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="small text-muted">
+                                    👍 @likes | 👎 @dislikes
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
             }
         }
     </div>
+    
     
     @if (ViewBag.TotalPages > 1)
     {
@@ -57,6 +82,7 @@
         </nav>
     }
     
+  
     @if (User.Identity!.IsAuthenticated)
     {
         <div class="card shadow-sm mt-4 mb-5">
@@ -95,7 +121,7 @@
                 success: function (res) {
                     if (res.success) {
                         const newReplyHtml = `
-                            <div class="card mb-3 shadow-sm">
+                            <div class="card mb-3 shadow-sm" id="reply-${res.replyId}">
                                 <div class="card-body d-flex">
                                     <div class="text-center me-3" style="min-width: 80px;">
                                         <img src="${res.userAvatar}" class="rounded-circle mb-1" style="width: 50px; height: 50px; object-fit: cover;" />
@@ -106,7 +132,15 @@
                                             <h6 class="fw-bold mb-1">${res.userName}</h6>
                                             <small class="text-muted">${res.createdAt}</small>
                                         </div>
-                                        <p class="mb-0">${res.content}</p>
+                                        <p class="mb-2">${res.content}</p>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-success vote-btn" data-reply-id="${res.replyId}" data-is-like="true">
+                                                👍 <span class="likes-count">0</span>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger vote-btn" data-reply-id="${res.replyId}" data-is-like="false">
+                                                👎 <span class="dislikes-count">0</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -118,6 +152,28 @@
                 },
                 error: function (err) {
                     alert('Ошибка при отправке ответа.');
+                }
+            });
+        });
+        
+        $(document).on('click', '.vote-btn', function () {
+            const btn = $(this);
+            const replyId = btn.data('reply-id');
+            const isLike = btn.data('is-like');
+            const card = $('#reply-' + replyId);
+
+            $.ajax({
+                url: '@Url.Action("VoteReply", "Topics")',
+                type: 'POST',
+                data: { replyId: replyId, isLike: isLike },
+                success: function (res) {
+                    if (res.success) {
+                        card.find('.likes-count').text(res.likes);
+                        card.find('.dislikes-count').text(res.dislikes);
+                    }
+                },
+                error: function () {
+                    alert('Ошибка при оценке сообщения.');
                 }
             });
         });
