@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = Model.Title;
     var userReplyCounts = ViewBag.UserReplyCounts as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }
 
 <div class="container mt-4">
@@ -43,7 +44,7 @@
                             <p class="mb-2">@reply.Content</p>
 
                            
-                            @if (User.Identity!.IsAuthenticated)
+                            @if (User.Identity!.IsAuthenticated && reply.UserId != currentUserId)
                             {
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-success vote-btn" data-reply-id="@reply.Id" data-is-like="true">
@@ -172,9 +173,13 @@
                         card.find('.dislikes-count').text(res.dislikes);
                     }
                 },
-                error: function () {
-                    alert('Ошибка при оценке сообщения.');
-                }
+                error: function (xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        alert(xhr.responseJSON.message);
+                    } else {
+                        alert('Ошибка при оценке сообщения.');
+                    }
+}
             });
         });
     </script>

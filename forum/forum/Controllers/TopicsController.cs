@@ -155,6 +155,14 @@ namespace forum.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
+            
+            var reply = await _context.Replies.FirstOrDefaultAsync(r => r.Id == replyId);
+            if (reply == null) return NotFound();
+            
+            if (reply.UserId == user.Id)
+            {
+                return BadRequest(new { success = false, message = "Нельзя ставить лайк или дизлайк на собственное сообщение." });
+            }
 
             var existingVote = await _context.ReplyVotes
                 .FirstOrDefaultAsync(v => v.ReplyId == replyId && v.UserId == user.Id);
@@ -183,7 +191,7 @@ namespace forum.Controllers
             }
 
             await _context.SaveChangesAsync();
-            
+
             var likesCount = await _context.ReplyVotes.CountAsync(v => v.ReplyId == replyId && v.IsLike);
             var dislikesCount = await _context.ReplyVotes.CountAsync(v => v.ReplyId == replyId && !v.IsLike);
 
